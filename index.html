@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Orientation Display</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #orientation-data {
+            text-align: center;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="orientation-data">
+        <h1>Device Orientation</h1>
+        <p>Alpha: <span id="alpha"></span>°</p>
+        <p>Beta: <span id="beta"></span>°</p>
+        <p>Gamma: <span id="gamma"></span>°</p>
+    </div>
+
+    <script>
+        function handleOrientation(event) {
+            document.getElementById('alpha').textContent = Math.round(event.alpha);
+            document.getElementById('beta').textContent = Math.round(event.beta);
+            document.getElementById('gamma').textContent = Math.round(event.gamma);
+        }
+
+        if (window.DeviceOrientationEvent) {
+            window.addEventListener('deviceorientation', handleOrientation);
+        } else {
+            document.getElementById('orientation-data').innerHTML = 'Device Orientation API not supported.';
+        }
+    </script>
+</body>
+</html>
