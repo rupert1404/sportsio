@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Orientation Display</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #orientation-data {
+            text-align: center;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <button id="connectButton">Connect</button>
+    <div id="orientation-data">
+        <h1>Device Orientation</h1>
+        <p>Alpha: <span id="alpha"></span>°</p>
+        <p>Beta: <span id="beta"></span>°</p>
+        <p>Gamma: <span id="gamma"></span>°</p>
+    </div>
+
+    <script>
+        function handleOrientation(payload) {
+
+            document.getElementById('alpha').textContent = Math.round(payload.alpha);
+            document.getElementById('beta').textContent = Math.round(payload.beta);
+            document.getElementById('gamma').textContent = Math.round(payload.gamma);
+        }
+
+
+
+const serviceUUID = '12345678-1234-5678-1234-56789abcdef0';  // Same UUID as on the phone
+const characteristicUUID = 'abcdef01-1234-5678-1234-56789abcdef0';  // Same characteristic UUID
+
+document.querySelector('#connectButton').addEventListener('click', function() {
+    navigator.bluetooth.requestDevice({
+        filters: [{ services: [serviceUUID] }]
+    })
+    .then(device => device.gatt.connect())
+    .then(server => server.getPrimaryService(serviceUUID))
+    .then(service => service.getCharacteristic(characteristicUUID))
+    .then(characteristic => {
+        return characteristic.startNotifications().then(char => {
+            char.addEventListener('characteristicvaluechanged', handleCharacteristicValueChanged);
+        });
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+});
+
+function handleCharacteristicValueChanged(event) {
+    // Decode the received data back into a string
+    const value = new TextDecoder().decode(event.target.value);
+    
+    try {
+        // Parse the string as JSON
+        const jsonData = JSON.parse(value);
+        handleOrientation(jsonData);
+
+    } catch (error) {
+        console.error('Error parsing JSON data:', error);
+    }
+}
+
+    </script>
+</body>
+</html>
