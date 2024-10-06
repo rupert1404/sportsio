@@ -55,7 +55,7 @@
 
 			const serverIP = urlParams.get('ip')
             const serverPort = 9000;
-            const wsUrl = `ws://${serverIP}:${serverPort}`;
+            const wsUrl = `wss://${serverIP}:${serverPort}`;
 
             const socket = new WebSocket(wsUrl);
 
