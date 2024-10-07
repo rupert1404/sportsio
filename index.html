@@ -34,60 +34,77 @@
     <script>
 		var payload;
 
-        function handleOrientation(event) {
-			payload = {'alpha': event.alpha, 'beta': event.beta, 'gamma': event.gamma};
+        if (typeof DeviceMotionEvent.requestPermission === 'function') {
+    // Request permission for iOS 13+
+    DeviceMotionEvent.requestPermission()
+    .then(response => {
+        if (response === 'granted') {
+            window.addEventListener('deviceorientation', function(event) {
+                let alpha = event.alpha;
+                let beta = event.beta;
+                let gamma = event.gamma;
 
-            document.getElementById('alpha').textContent = Math.round(payload.alpha);
-            document.getElementById('beta').textContent = Math.round(payload.beta);
-            document.getElementById('gamma').textContent = Math.round(payload.gamma);
+                console.log("Alpha (z-axis): " + alpha);
+                console.log("Beta (x-axis): " + beta);
+                console.log("Gamma (y-axis): " + gamma);
+
+                if (typeof window.orientation !== 'undefined') {
+                    console.log("iPhone screen orientation: " + window.orientation);
+                }
+            });
         }
+    })
+    .catch(console.error);
+} else {
+    // Normal Android or non-iOS 13+ case
+    window.addEventListener('deviceorientation', function(event) {
+        let alpha = event.alpha;
+        let beta = event.beta;
+        let gamma = event.gamma;
 
-        if (window.DeviceOrientationEvent) {
-            window.addEventListener('deviceorientation', handleOrientation);
-        } else {
-            document.getElementById('orientation-data').innerHTML = 'Device Orientation API not supported.';
+        console.log("Alpha (z-axis): " + alpha);
+        console.log("Beta (x-axis): " + beta);
+        console.log("Gamma (y-axis): " + gamma);
+
+        if (typeof window.orientation !== 'undefined') {
+            console.log("iPhone screen orientation: " + window.orientation);
         }
+    });
+}
 
 
 
-const serviceUUID = '12345678-1234-5678-1234-56789abcdef0';  // Custom Service UUID
-const characteristicUUID = 'abcdef01-1234-5678-1234-56789abcdef0';  // Custom Characteristic UUID
-let characteristic;
+		document.addEventListener('DOMContentLoaded', () => {
+			const queryString = window.location.search;
+			const urlParams = new URLSearchParams(queryString);
 
-navigator.bluetooth.requestDevice({
-    acceptAllDevices: true,
-    optionalServices: [serviceUUID]
-})
-.then(device => device.gatt.connect())
-.then(server => server.getPrimaryService(serviceUUID))
-.then(service => service.getCharacteristic(characteristicUUID))
-.then(char => {
-    characteristic = char;
-    
-    // Function to send JSON data
-    function sendJSONData() {
-        const jsonData = {
-            temperature: Math.random() * 100,  // Example JSON data
-            humidity: Math.random() * 100,
-            timestamp: new Date().toISOString()
-        };
+			const serverIP = urlParams.get('ip')
+            const serverPort = 9000;
+            const wsUrl = `ws://${serverIP}:${serverPort}`;
 
-        const jsonString = JSON.stringify(payload);  // Convert JSON to string
-        const data = new TextEncoder().encode(jsonString);  // Encode string as binary (Uint8Array)
+            const socket = new WebSocket(wsUrl);
 
-        characteristic.writeValue(data)  // Send the encoded data
-            .then(() => console.log('JSON data sent:', jsonString))
-            .catch(error => console.error('Error sending JSON data:', error));
-        
-        setTimeout(sendJSONData, 1000);  // Send data every second
-    }
+            socket.addEventListener('open', () => {
+                console.log('WebSocket connection established.');
+                setInterval(() => {
+                    if (socket.readyState === WebSocket.OPEN) {
+                        socket.send(JSON.stringify(payload));
+                    }
+                }, 500);
+            });
 
-    sendJSONData();  // Start sending JSON data
-})
-.catch(error => {
-    console.error('Error:', error);
-});
+            socket.addEventListener('message', (event) => {
+                console.log('Received:', event.data);
+            });
 
+            socket.addEventListener('close', () => {
+                console.log('WebSocket connection closed.');
+            });
+
+            socket.addEventListener('error', (error) => {
+                console.error('WebSocket error:', error);
+            });
+        });
     </script>
 </body>
 </html>
